@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 
 namespace ads
 {
@@ -211,17 +212,31 @@ public:
 
     }
 
-    // Find returns a value of `value_type` stored under the `key`.
-    value_type Find(const key_type& key) const noexcept
+    // Find returns a node, which holds a `key`.
+    node_pointer Find(const key_type& key) const noexcept
     {
+        node_pointer pCurrNode = Root();
 
+        while (pCurrNode)
+        {
+            key_type currKey = internal::Key(pCurrNode);
+
+            if (m_compare(key, currKey))
+                pCurrNode = Left(pCurrNode);
+            else if (m_compare(currKey, key))
+                pCurrNode = Right(pCurrNode);
+            else
+                return pCurrNode;
+        }
+
+        return nullptr;
     }
 
     // Contains retuns true if value with `key` is presented 
     // in the tree.
     bool Contains(const key_type& key) const noexcept
     {
-
+        return Find(key) == nullptr;
     }
 
     // Delete removes element with key node and rebalace the
@@ -231,7 +246,25 @@ public:
 
     }
 
+    bool operator==(const RbTree& other) const noexcept
+    {
+        if (this == std::addressof(other))
+            return true;
+
+        return TreesAreEqual(Root(), other.Root());
+    }
+
+    bool operator!=(const RbTree& other) const noexcept
+    {
+        return !(*this == other);
+    }
+
 private: // some utils functuions
+    node_pointer Root() const
+    {
+        return static_cast<key_value_type>(m_endNode.m_pParent);
+    }
+
     static node_pointer AllocateNode(const key_value_type& val, base_pointer pParent)
     {
         node_pointer pNode = new node_type{};
@@ -239,6 +272,11 @@ private: // some utils functuions
         pNode->m_pParent = pParent;
         pNode->m_value = val;
         return pNode;
+    }
+
+    static node_pointer DeallocateNode(node_pointer pNode)
+    {
+        delete pNode;
     }
 
     static node_pointer Left(base_pointer pNode) noexcept
@@ -259,6 +297,14 @@ private: // some utils functuions
     static bool IsRightChild(base_pointer pNode) noexcept
     {
         return pNode->m_pParent->m_pRight == pNode;
+    }
+
+    static bool TreesAreEqual(const node_pointer lhs, const node_pointer rhs) noexcept
+    {
+        if (!lhs && !rhs) return true;
+        if ((lhs && !rhs) || (!lhs && rhs)) return false;
+        if (lhs->m_value != rhs->m_value || lhs->m_color != rhs->m_color) return false;
+        return NodesAreEqual(lhs->m_pLeft, rhs->m_pLeft) && NodesAreEqual(lhs->m_pRight, rhs->m_pRight);
     }
 
 private:
