@@ -23,11 +23,11 @@ int main()
     for (int i = 0; i < 30'000; ++i)
     {
         adsSet.Insert(i);
+        std::cout << "Node " << i << " inserted ------------" << std::endl;
     }
 
     end = std::chrono::high_resolution_clock::now();
     dur = end - start;
     std::cout << "Time for inserting 30'000 elements in ads::RbTree [" 
               << dur.count() << " nanosec]" << std::endl;
-
 }
