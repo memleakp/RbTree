@@ -189,13 +189,44 @@ inline void Transplant(TreeHeader& header, NodeBase* pNode, NodeBase* pExchangeN
     pExchangeNode->m_pParent = pNode->m_pParent;
 }
 
-inline void RebalanceAfterRemove()
+inline void RebalanceAfterRemove(TreeHeader& header, NodeBase* pTransplant)
 {
+    NodeBase* pRoot = header.m_endNode->m_pParent;
+    NodeBase* pCurrNode = pTransplant;
 
+    while (pCurrNode != pRoot && pCurrNode->m_color == Color::Black)
+    {
+        if (IsLeftChild(pCurrNode))
+        {
+            NodeBase* pSibling = pCurrNode->m_pParent->m_pRight;
+
+            if (pSibling->m_color == Color::Red)
+            {
+                pSibling->m_color = Color::Black;
+                pCurrNode->m_pParent->m_color = Color::Red;
+                LeftRotate(header, pCurrNode->m_pParent);
+            }
+            if (pSibling->m_pLeft->m_color == Color::Black && pSibling->m_pRight->m_color == Color::Black)
+            {
+
+            }
+            else
+            {
+                if (pSibling->m_pRight->m_color == Color::Black)
+                {
+
+                }
+            }
+        }
+        else
+        {
+            NodeBase* pSibling = pCurrNode->m_pParent->m_pLeft;
+        }
+    }
 }
 
-// `KeyValueType` helps to get a `key_type` and a `value_type`
-// from some generic type `T`.
+/// `KeyValueType` helps to get a `key_type` and a `value_type`
+/// from some generic type `T`.
 template<typename T>
 struct KeyValueType
 {
@@ -260,7 +291,7 @@ public:
 
 public:
     // Default constructor.
-    RbTree()
+    RbTree( )
     {
         m_endNode = new BaseType{};
         m_endNode->m_color = internal::Color::Red;
@@ -269,51 +300,47 @@ public:
         m_endNode->m_pRight = nullptr;
         m_compare = compare{};
         m_size = 0;
-/*
-        m_preallocatedNodes.resize(30'000, NodeType{});
-        m_currPosition = 0;
-*/
     }
 
-    // Copy constructor.
+    /// Copy constructor.
     RbTree(const RbTree& other) { }
-    // Move constructor.
+    /// Move constructor.
     RbTree(RbTree&& other) { }
 
-    // Copy assignment operator.
+    /// Copy assignment operator.
     RbTree& operator=(const RbTree& other) { }
-    // Move assignment operator.
+    /// Move assignment operator.
     RbTree& operator=(RbTree&& other) { }
 
-    // Destructor removes all nodes of a tree.
-    ~RbTree() { }
+    /// Destructor removes all nodes of a tree.
+    ~RbTree( ) { }
 
 public:
-    // Size returns current number of elements in container.
-    size_type Size() const noexcept { return m_size; }
+    /// Size returns current number of elements in container.
+    size_type Size( ) const noexcept { return m_size; }
 
-    // Empty returns true if size of container is 0, false overweise.
-    bool Empty() const noexcept { return m_size == 0; }
+    /// Empty returns true if size of container is 0, false overweise.
+    bool Empty( ) const noexcept { return m_size == 0; }
 
 public:
-    // Insert adds a new value to the container only if it is 
-    // not presented in the tree.
+    /// Insert adds a new value to the container only if it is 
+    /// not presented in the tree.
     NodePtr Insert(const key_value_type& val) noexcept
     {
         return InsertInternal(val);
     }
 
-    // InsertOrUpdate adds new value to the tree or update 
-    // already existing one.
+    /// InsertOrUpdate adds new value to the tree or update 
+    /// already existing one.
     NodePtr InsertOrUpdate(const key_value_type& val) noexcept
     {
         return InsertInternal(val, true);
     }
 
-    // Find returns a node, which holds a `key`.
+    /// Find returns a node, which holds a `key`.
     NodePtr Find(const key_type& key) const noexcept
     {
-        NodePtr pCurrNode = Root();
+        NodePtr pCurrNode = Root( );
 
         while (pCurrNode)
         {
@@ -330,22 +357,22 @@ public:
         return nullptr;
     }
 
-    // Contains retuns true if value with `key` is presented 
-    // in the tree.
+    /// Contains retuns true if value with `key` is presented 
+    /// in the tree.
     bool Contains(const key_type& key) const noexcept
     {
         return Find(key) == nullptr;
     }
 
-    // Remove removes element with key node and rebalace the
-    // tree if needed.
+    /// `Remove` removes element with key node and rebalace the
+    /// tree if needed.
     void Remove(const key_type& key)
     {
-        NodePtr pNodeToDelete = Find(key);
+        NodePtr pNodeToRemove = Find(key);
 
-        if (!pNodeToDelete) return;
+        if (!pNodeToRemove) return;
 
-        NodePtr pNode = pNodeToDelete;
+        NodePtr pNode = pNodeToRemove;
         auto nodeOriginalColor = pNode->m_color;
 
         NodePtr pTransplant = nullptr;
@@ -357,6 +384,7 @@ public:
         }
         else if (pNode->m_pRight == nullptr)
         {
+            // If 
             pTransplant = pNode->m_pLeft;
             internal::Transplant(*this, pNode, pNode->m_pLeft);
         }
@@ -366,11 +394,30 @@ public:
             nodeOriginalColor = pNode->m_color;
             pTransplant = pNode->m_pRight;
 
+            if (pNode != pNodeToRemove->m_pRight)
+            {
+                internal::Transplant(*this, pNode, pNode->m_pRight);
+                pNode->m_pRight = pNodeToRemove->m_pRight;
+                pNode->m_pRight->m_pParent = pNode;
+            }
+            else
+            {
+                pTransplant->m_pParent = pNode;
+            }
 
+            internal::Transplant(*this, pNodeToRemove, pNode);
+            pNode->m_pLeft = pNodeToRemove->m_pLeft;
+            pNode->m_pLeft->m_pParent = pNode;
+            pNode->m_color = pNodeToRemove->m_color;
         }
 
+        DeallocateNode(pNodeToRemove);
+
+        --m_size;
+
         if (nodeOriginalColor == internal::Color::Black)
-            internal::RebalanceAfterRemove();
+            internal::RebalanceAfterRemove(*this, pTransplant);
+
     }
 
     bool operator==(const RbTree& other) const noexcept
@@ -378,7 +425,7 @@ public:
         if (this == std::addressof(other))
             return true;
 
-        return TreesAreEqual(Root(), other.Root());
+        return TreesAreEqual(Root( ), other.Root( ));
     }
 
     bool operator!=(const RbTree& other) const noexcept
@@ -387,14 +434,14 @@ public:
     }
 
 private:
-    NodePtr Root() const noexcept
+    NodePtr Root( ) const noexcept
     {
         return static_cast<NodePtr>(m_endNode->m_pParent);
     }
 
     NodePtr InsertInternal(const key_value_type& val, bool updateIfExists = false) noexcept
     {
-        NodePtr pCurrNode = Root();
+        NodePtr pCurrNode = Root( );
         NodePtr pParentNode = nullptr; // this node will be a parent of a new node
 
         key_type keyToInsert = internal::Key(val);
@@ -449,7 +496,9 @@ private:
                 pParentNode->m_pRight = pNewNode;
 
                 if (pParentNode == m_endNode->m_pRight)
+                {
                     m_endNode->m_pRight = pNewNode;
+                }
             }
         }
 
@@ -462,8 +511,8 @@ private:
 
 private:
     NodePtr AllocateNode(const key_value_type& val,
-                         BasePtr pParent,
-                         internal::Color color = internal::Color::Red)
+                         BasePtr               pParent,
+                         internal::Color       color = internal::Color::Red)
     {
         NodePtr pNode = new NodeType{};
         pNode->m_color = color;
@@ -489,9 +538,18 @@ private:
 
     static bool TreesAreEqual(const NodePtr lhs, const NodePtr rhs)
     {
-        if (!lhs && !rhs) return true;
-        if ((lhs && !rhs) || (!lhs && rhs)) return false;
-        if (lhs->m_value != rhs->m_value || lhs->m_color != rhs->m_color) return false;
+        if (!lhs && !rhs)
+        {
+            return true;
+        }
+        if ((lhs && !rhs) || (!lhs && rhs))
+        {
+            return false;
+        }
+        if (lhs->m_value != rhs->m_value || lhs->m_color != rhs->m_color)
+        {
+            return false;
+        }
         return NodesAreEqual(lhs->m_pLeft, rhs->m_pLeft) && NodesAreEqual(lhs->m_pRight, rhs->m_pRight);
     }
 
