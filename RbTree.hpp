@@ -31,7 +31,7 @@ struct Node : public NodeBase
 // current size of container.
 struct TreeHeader
 {
-    // `m_endNode` is a special node, wich holds pointers to the
+    // `m_endNode` is a special node, which holds pointers to the
     // most left node as its left child, most right node as its
     // right child and a pointer to the root as its parent. Also
     // `m_endNode` is a parent of a root node of tree.
@@ -73,11 +73,11 @@ inline NodeBase* TreeMin(NodeBase* pNode)
     return pNode;
 }
 
-// TODO: add description and visualisation.
+// TODO: add description and visualizations.
 inline void LeftRotate(TreeHeader& header, NodeBase* pRotationNode) noexcept
 {
     NodeBase* pSubtree = pRotationNode->m_pRight;
-    pRotationNode->m_pRight = pSubtree->m_pLeft; // turn pSubstree's left subtree into pRotationNode's right subtree
+    pRotationNode->m_pRight = pSubtree->m_pLeft; // turn pSubstrees' left subtree into pRotationNode's right subtree
 
     if (pSubtree->m_pLeft)
         pSubtree->m_pLeft->m_pParent = pRotationNode->m_pRight; // if left subtree of pSubtree is not empty, set a parent
@@ -95,7 +95,7 @@ inline void LeftRotate(TreeHeader& header, NodeBase* pRotationNode) noexcept
     pRotationNode->m_pParent = pSubtree;
 }
 
-// TODO: add description and visualisation.
+// TODO: add description and visualizations.
 inline void RightRotate(TreeHeader& header, NodeBase* pRotationNode) noexcept
 {
     NodeBase* pSubtree = pRotationNode->m_pLeft;
@@ -154,7 +154,7 @@ inline void RebalanceAfterInsert(TreeHeader& header, NodeBase* pInsertedNode) no
 
             if (pUncleNode && pUncleNode->m_color == Color::Red)
             {
-                pCurrNode->m_color = Color::Black;
+                pCurrNode->m_pParent->m_color = Color::Black;
                 pUncleNode->m_color = Color::Black;
                 pCurrNode->m_pParent->m_pParent->m_color = Color::Red;
                 pCurrNode = pCurrNode->m_pParent->m_pParent;
@@ -189,8 +189,9 @@ inline void Transplant(TreeHeader& header, NodeBase* pNode, NodeBase* pExchangeN
     pExchangeNode->m_pParent = pNode->m_pParent;
 }
 
-inline void RebalanceAfterRemove(TreeHeader& header, NodeBase* pTransplant)
+inline void RebalanceAfterRemove(TreeHeader& /*header*/, NodeBase* /*pTransplant*/)
 {
+    /*
     NodeBase* pRoot = header.m_endNode->m_pParent;
     NodeBase* pCurrNode = pTransplant;
 
@@ -223,6 +224,7 @@ inline void RebalanceAfterRemove(TreeHeader& header, NodeBase* pTransplant)
             NodeBase* pSibling = pCurrNode->m_pParent->m_pLeft;
         }
     }
+    */
 }
 
 /// `KeyValueType` helps to get a `key_type` and a `value_type`
@@ -279,15 +281,15 @@ class RbTree : private internal::TreeHeader
 {
 public:
     using key_value_type = V;
-    using key_type = typename internal::KeyValueType<V>::key_type;
-    using value_type = typename internal::KeyValueType<V>::value_type;
-    using compare = Cmp;
-    using size_type = std::size_t;
+    using key_type       = typename internal::KeyValueType<V>::key_type;
+    using value_type     = typename internal::KeyValueType<V>::value_type;
+    using compare        = Cmp;
+    using size_type      = std::size_t;
 
     using NodeType = internal::Node<key_value_type>;
-    using NodePtr = internal::Node<key_value_type>*;
+    using NodePtr  = internal::Node<key_value_type>*;
     using BaseType = internal::NodeBase;
-    using BasePtr = internal::NodeBase*;
+    using BasePtr  = internal::NodeBase*;
 
 public:
     // Default constructor.
@@ -319,7 +321,7 @@ public:
     /// Size returns current number of elements in container.
     size_type Size( ) const noexcept { return m_size; }
 
-    /// Empty returns true if size of container is 0, false overweise.
+    /// Empty returns true if size of container is 0, false otherwise.
     bool Empty( ) const noexcept { return m_size == 0; }
 
 public:
@@ -361,10 +363,10 @@ public:
     /// in the tree.
     bool Contains(const key_type& key) const noexcept
     {
-        return Find(key) == nullptr;
+        return Find(key) != nullptr;
     }
 
-    /// `Remove` removes element with key node and rebalace the
+    /// `Remove` removes element with key node and re-balance the
     /// tree if needed.
     void Remove(const key_type& key)
     {
@@ -373,7 +375,7 @@ public:
         if (!pNodeToRemove) return;
 
         NodePtr pNode = pNodeToRemove;
-        auto nodeOriginalColor = pNode->m_color;
+        auto nodeOriginalColor = pNodeToRemove->m_color;
 
         NodePtr pTransplant = nullptr;
 
@@ -384,7 +386,6 @@ public:
         }
         else if (pNode->m_pRight == nullptr)
         {
-            // If 
             pTransplant = pNode->m_pLeft;
             internal::Transplant(*this, pNode, pNode->m_pLeft);
         }
@@ -433,7 +434,32 @@ public:
         return !(*this == other);
     }
 
+    void Dump( ) const
+    {
+        Print(std::cout, Root(), 0, false);
+    }
+
 private:
+    void Print(std::ostream& out, NodePtr pNode, size_type level, bool isLeftChild) const
+    {
+        if (level > 0)
+        {
+            for (size_type i = 0; i < level - 1; ++i)
+            {
+                out << "|   ";
+            }
+            out << "|---";
+        }
+
+        out << "{ " << pNode->m_value;
+        if (level > 0) out << ", " << (isLeftChild ? "Left, " : "Right, ");
+        else out << ", Root, ";
+        out << (pNode->m_color == internal::Color::Black ? "Black }\n" : "Red }\n");
+
+        if (pNode->m_pLeft) Print(out, Left(pNode), level + 1, true);
+        if (pNode->m_pRight) Print(out, Right(pNode), level + 1, false);
+    }
+
     NodePtr Root( ) const noexcept
     {
         return static_cast<NodePtr>(m_endNode->m_pParent);
@@ -445,6 +471,7 @@ private:
         NodePtr pParentNode = nullptr; // this node will be a parent of a new node
 
         key_type keyToInsert = internal::Key(val);
+        bool insertLeft = false;
 
         while (pCurrNode != nullptr)
         {
@@ -453,15 +480,18 @@ private:
 
             if (m_compare(keyToInsert, keyCurrNode))
             {
+                insertLeft = true;
                 pCurrNode = Left(pCurrNode);
             }
             else
             {
+                insertLeft = false;
                 if (!m_compare(keyCurrNode, keyToInsert))
                 {
                     if (updateIfExists)
+                    {
                         pCurrNode->m_value = val;
-
+                    }
                     return pCurrNode;
                 }
 
@@ -484,17 +514,17 @@ private:
         {
             pNewNode = AllocateNode(val, pParentNode);
 
-            if (m_compare(keyToInsert, internal::Key(pParentNode->m_value)))
+            if (insertLeft)
             {
                 pParentNode->m_pLeft = pNewNode;
-
                 if (pParentNode == m_endNode->m_pLeft)
+                {
                     m_endNode->m_pLeft = pNewNode;
+                }
             }
             else
             {
                 pParentNode->m_pRight = pNewNode;
-
                 if (pParentNode == m_endNode->m_pRight)
                 {
                     m_endNode->m_pRight = pNewNode;

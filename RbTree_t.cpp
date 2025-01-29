@@ -2,6 +2,7 @@
 #include <set>
 #include <string>
 #include <chrono>
+#include <array>
 
 #include "RbTree.hpp"
 
@@ -30,29 +31,49 @@ private:
     std::string m_messagePrefix;
 };
 
+static void CheckRbTreePrinting()
+{
+    // values to insert
+    std::array<int, 10> values{ 10, 12, 5, 7, 0, 14, 20, 8, 9, 1 };
+    ads::RbTree<int> set{};
+
+    std::size_t idx = 0;
+    for (const auto& entry : values)
+    {
+        set.Insert(entry);
+        std::cout << "\nIdx " << (idx++) << ":" << std::endl;
+        set.Dump();
+    }
+}
+
 int main()
 {
-    std::set<int> stdSet{};
-    ads::RbTree<int> adsSet{};
+    {
+        std::set<int> stdSet{};
+        ads::RbTree<int> adsSet{};
 
-    {
-        Timer _{ "Insertion in std::set    " };
-        for (int i = 0; i < 30'000; ++i)
-            stdSet.insert(i);
+        {
+            Timer _{ "Insertion in std::set    " };
+            for (int i = 0; i < 30'000; ++i)
+                stdSet.insert(i);
+        }
+        {
+            Timer _{ "Insertion in ads::RbTree " };
+            for (int i = 0; i < 30'000; ++i)
+                adsSet.Insert(i);
+        }
+        {
+            Timer _{ "Searching in std::set    " };
+            for (int i = 0; i < 30'000; ++i)
+                stdSet.find(i);
+        }
+        {
+            Timer _{ "Searching in ads::RbTree " };
+            for (int i = 0; i < 30'000; ++i)
+                adsSet.Find(i);
+        }
     }
     {
-        Timer _{ "Insertion in ads::RbTree " };
-        for (int i = 0; i < 30'000; ++i)
-            adsSet.Insert(i);
-    }
-    {
-        Timer _{ "Searching in std::set    " };
-        for (int i = 0; i < 30'000; ++i)
-            stdSet.find(i);
-    }
-    {
-        Timer _{ "Searching in ads::RbTree " };
-        for (int i = 0; i < 30'000; ++i)
-            adsSet.Find(i);
+        CheckRbTreePrinting();
     }
 }
