@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -58,8 +59,9 @@ inline bool IsRightChild(const NodeBase* pNode) noexcept
 inline NodeBase* TreeMax(NodeBase* pNode)
 {
     while (pNode->m_pRight)
+    {
         pNode = pNode->m_pRight;
-
+    }
     return pNode;
 }
 
@@ -68,8 +70,9 @@ inline NodeBase* TreeMax(NodeBase* pNode)
 inline NodeBase* TreeMin(NodeBase* pNode)
 {
     while (pNode->m_pLeft)
+    {
         pNode = pNode->m_pLeft;
-
+    }
     return pNode;
 }
 
@@ -80,16 +83,24 @@ inline void LeftRotate(TreeHeader& header, NodeBase* pRotationNode) noexcept
     pRotationNode->m_pRight = pSubtree->m_pLeft; // turn pSubstrees' left subtree into pRotationNode's right subtree
 
     if (pSubtree->m_pLeft)
+    {
         pSubtree->m_pLeft->m_pParent = pRotationNode->m_pRight; // if left subtree of pSubtree is not empty, set a parent
+    }
 
     pSubtree->m_pParent = pRotationNode->m_pParent;
 
     if (pRotationNode->m_pParent->m_pParent == pRotationNode)
+    {
         header.m_endNode->m_pParent = pSubtree; // make pSubtree root node if pRotationNode was the root
+    }
     else if (IsLeftChild(pRotationNode))
+    {
         pRotationNode->m_pParent->m_pLeft = pSubtree;
+    }
     else
+    {
         pRotationNode->m_pParent->m_pRight = pSubtree;
+    }
 
     pSubtree->m_pLeft = pRotationNode;
     pRotationNode->m_pParent = pSubtree;
@@ -102,16 +113,24 @@ inline void RightRotate(TreeHeader& header, NodeBase* pRotationNode) noexcept
     pRotationNode->m_pLeft = pSubtree->m_pRight;
 
     if (pSubtree->m_pRight)
+    {
         pSubtree->m_pRight->m_pParent = pRotationNode; // if right subtree of pSubtree is not empty, set parent
+    }
 
     pSubtree->m_pParent = pRotationNode->m_pParent;
 
     if (pRotationNode->m_pParent->m_pParent == pRotationNode)
+    {
         header.m_endNode->m_pParent = pSubtree; // make pSubtree root node if pRotationNode was the root
+    }
     else if (IsLeftChild(pRotationNode))
+    {
         pRotationNode->m_pParent->m_pLeft = pSubtree;
+    }
     else
+    {
         pRotationNode->m_pParent->m_pRight = pSubtree;
+    }
 
     pSubtree->m_pRight = pRotationNode;
     pRotationNode->m_pParent = pSubtree;
@@ -180,18 +199,27 @@ inline void RebalanceAfterInsert(TreeHeader& header, NodeBase* pInsertedNode) no
 inline void Transplant(TreeHeader& header, NodeBase* pNode, NodeBase* pExchangeNode)
 {
     if (pNode->m_pParent == header.m_endNode)
+    {
         header.m_endNode->m_pParent = pExchangeNode;
+    }
     else if (IsLeftChild(pNode))
+    {
         pNode->m_pParent->m_pLeft = pExchangeNode;
+    }
     else
+    {
         pNode->m_pParent->m_pRight = pExchangeNode;
+    }
 
-    pExchangeNode->m_pParent = pNode->m_pParent;
+    if (pExchangeNode)
+    {
+        pExchangeNode->m_pParent = pNode->m_pParent;
+    }
 }
 
-inline void RebalanceAfterRemove(TreeHeader& /*header*/, NodeBase* /*pTransplant*/)
+#if 0
+inline void RebalanceAfterRemove(TreeHeader& header, NodeBase* pTransplant)
 {
-    /*
     NodeBase* pRoot = header.m_endNode->m_pParent;
     NodeBase* pCurrNode = pTransplant;
 
@@ -206,25 +234,103 @@ inline void RebalanceAfterRemove(TreeHeader& /*header*/, NodeBase* /*pTransplant
                 pSibling->m_color = Color::Black;
                 pCurrNode->m_pParent->m_color = Color::Red;
                 LeftRotate(header, pCurrNode->m_pParent);
+                //pSibling = pCurrNode->m_pParent->m_pRight; // TODO: look next TODO !!!
+                pCurrNode->m_pParent->m_pRight = pCurrNode->m_pParent->m_pRight;
             }
             if (pSibling->m_pLeft->m_color == Color::Black && pSibling->m_pRight->m_color == Color::Black)
             {
-
+                pSibling->m_color = Color::Red;
+                pCurrNode = pCurrNode->m_pParent;
             }
             else
             {
                 if (pSibling->m_pRight->m_color == Color::Black)
                 {
+                    pSibling->m_pLeft->m_color = Color::Black;
+                    pSibling->m_color = Color::Red;
+                    RightRotate(header, pSibling);
+                    //pSibling = pCurrNode->m_pParent->m_pRight; // TODO: check this code, it possibly can works wrong, because
+                                                               // it updates state of pSibling, which is a local variable !!!
+                    pCurrNode->m_pParent->m_pRight = pCurrNode->m_pParent->m_pRight;
 
                 }
+
+                pSibling->m_color = pCurrNode->m_pParent->m_color;
+                pCurrNode->m_pParent->m_color = Color::Black;
+                pSibling->m_pRight->m_color = Color::Black;
+                LeftRotate(header, pCurrNode->m_pParent);
+                pCurrNode = header.m_endNode->m_pParent;
             }
         }
         else
         {
             NodeBase* pSibling = pCurrNode->m_pParent->m_pLeft;
+
+            if (pSibling->m_color == Color::Red)
+            {
+                pSibling->m_color = Color::Black;
+                pCurrNode->m_pParent->m_color = Color::Red;
+                RightRotate(header, pCurrNode->m_pParent);
+                //pSibling = pCurrNode->m_pParent->m_pLeft; // TODO: look above !!!
+                pCurrNode->m_pParent->m_pLeft = pCurrNode->m_pParent->m_pLeft;
+
+            }
+            // NOTE: added check for siblings' children on nullptr
+            if (pSibling->m_pRight && pSibling->m_pRight->m_color == Color::Black 
+                    && pSibling->m_pLeft && pSibling->m_pLeft->m_color == Color::Black)
+            {
+                pSibling->m_color = Color::Red;
+                pCurrNode = pCurrNode->m_pParent;
+            }
+            else
+            {
+                // NOTE: added left child check
+                if (pSibling->m_pLeft && pSibling->m_pLeft->m_color == Color::Black)
+                {
+                    pSibling->m_pRight->m_color = Color::Black;
+                    pSibling->m_color = Color::Red;
+                    LeftRotate(header, pSibling);
+                    //pSibling = pCurrNode->m_pParent->m_pLeft; // TODO: look above !!!
+                    pCurrNode->m_pParent->m_pLeft = pCurrNode->m_pParent->m_pLeft;
+                }
+
+                pSibling->m_color = pCurrNode->m_pParent->m_color;
+                pCurrNode->m_pParent->m_color = Color::Black;
+                pSibling->m_pLeft->m_color = Color::Black;
+                RightRotate(header, pCurrNode->m_pParent);
+                pCurrNode = header.m_endNode->m_pParent;
+            }
         }
     }
-    */
+
+    pCurrNode->m_color = Color::Black;
+}
+#endif
+
+inline void RebalanceAfterRemove(TreeHeader& header, NodeBase* pTransplant)
+{
+    NodeBase*& root = header.m_endNode->m_pParent;
+    NodeBase*& leftMost = header.m_endNode->m_pLeft;
+    NodeBase*& rightMost = header.m_endNode->m_pRight;
+    NodeBase* pCurrNode = pTransplant;
+    NodeBase* pX = nullptr;
+    NodeBase* pXParent = nullptr;
+
+    if (pCurrNode->m_pLeft == nullptr) // pCurrNode has at most one non nullptr child
+    {
+        pX = pCurrNode->m_pRight; // pX might be nullptr
+    }
+    else
+    {
+        if (pCurrNode->m_pRight == nullptr)
+        {
+            pX = pCurrNode->m_pLeft; // pX is not nullptr
+        }
+        else
+        {
+            
+        }
+    }
 }
 
 /// `KeyValueType` helps to get a `key_type` and a `value_type`
@@ -374,6 +480,32 @@ public:
 
         if (!pNodeToRemove) return;
 
+        // TODO: this is bad, situation with tree of size 1 should be handled more generic
+        if (m_size == 1)
+        {
+            DeallocateNode(static_cast<NodePtr>(m_endNode->m_pParent));
+            m_endNode->m_pParent = nullptr;
+            --m_size;
+            return;
+        }
+
+        // Try to handle a situation then node to remove has no children //////////////////////////////////
+        if (!pNodeToRemove->m_pLeft && !pNodeToRemove->m_pRight)
+        {
+            if (internal::IsLeftChild(pNodeToRemove))
+            {
+                pNodeToRemove->m_pParent->m_pLeft = nullptr;
+            }
+            else
+            {
+                pNodeToRemove->m_pParent->m_pRight = nullptr;
+            }
+            DeallocateNode(pNodeToRemove);
+            --m_size;
+            return;
+        }
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+
         NodePtr pNode = pNodeToRemove;
         auto nodeOriginalColor = pNodeToRemove->m_color;
 
@@ -381,21 +513,21 @@ public:
 
         if (pNode->m_pLeft == nullptr)
         {
-            pTransplant = pNode->m_pRight;
+            pTransplant = Right(pNode);
             internal::Transplant(*this, pNode, pNode->m_pRight);
         }
         else if (pNode->m_pRight == nullptr)
         {
-            pTransplant = pNode->m_pLeft;
+            pTransplant = Left(pNode);
             internal::Transplant(*this, pNode, pNode->m_pLeft);
         }
         else
         {
-            pNode = internal::TreeMin(pNode->m_pRight);
+            pNode = static_cast<NodePtr>(internal::TreeMin(pNode->m_pRight));
             nodeOriginalColor = pNode->m_color;
-            pTransplant = pNode->m_pRight;
+            pTransplant = pNode->m_pRight ? Right(pNode) : pNode; // NOTE: changed it to conditional stmt, because if pNode has no children, pTransplant will be nullptr
 
-            if (pNode != pNodeToRemove->m_pRight)
+            if (pNode != Right(pNodeToRemove))
             {
                 internal::Transplant(*this, pNode, pNode->m_pRight);
                 pNode->m_pRight = pNodeToRemove->m_pRight;
@@ -417,8 +549,9 @@ public:
         --m_size;
 
         if (nodeOriginalColor == internal::Color::Black)
+        {
             internal::RebalanceAfterRemove(*this, pTransplant);
-
+        }
     }
 
     bool operator==(const RbTree& other) const noexcept
@@ -442,6 +575,11 @@ public:
 private:
     void Print(std::ostream& out, NodePtr pNode, size_type level, bool isLeftChild) const
     {
+        if (!pNode)
+        {
+            out << "{ }\n";
+            return;
+        }
         if (level > 0)
         {
             for (size_type i = 0; i < level - 1; ++i)
@@ -551,7 +689,7 @@ private:
         return pNode;
     }
 
-    static NodePtr DeallocateNode(NodePtr pNode)
+    static void DeallocateNode(NodePtr pNode)
     {
         delete pNode;
     }
