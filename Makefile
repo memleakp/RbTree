@@ -1,7 +1,7 @@
 CXX = g++
 
 CXXFLAGS_DEBUG = -g -O0 -fsanitize=address,leak -Wall -Wextra -Wpedantic -Wshadow -Wconversion -DDEBUG
-CXXFLAGS_RELEASE = -O2 -march=native -DNDEBUG -Wall -Wextra -Wpedantic
+CXXFLAGS_RELEASE = -O1 -march=native -DNDEBUG -Wall -Wextra -Wpedantic
 
 BUILD_DIR = build
 
