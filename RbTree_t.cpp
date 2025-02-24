@@ -18,8 +18,8 @@ public:
         auto end = std::chrono::high_resolution_clock::now();
         auto executionTime = end - m_start;
         std::cout << m_messagePrefix << "Execution time: "
-                  << std::chrono::duration_cast<std::chrono::milliseconds>(executionTime).count()
-                  << " millisec" << std::endl;
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(executionTime).count()
+                  << " ns" << std::endl;
     }
 
 private:
@@ -42,7 +42,7 @@ static void CheckRbTreeInsert() {
 }
 
 static void CheckRbTreeDelete() {
-    std::cout << "Checking deleting" << std::endl;
+    std::cout << "\nChecking deleting" << std::endl;
 
     // values to insert
     std::array<int, 10> values{10, 12, 5, 7, 0, 14, 20, 8, 9, 1};
@@ -91,15 +91,14 @@ int main() {
             }
         }
         {
-            Stopwatch _{"Deleting in std::set      "};
+            Stopwatch _{"Deleting in std::set     "};
             for (int i = 0; i < 30'000; ++i) {
                 stdSet.erase(i);
             }
         }
         {
-            Stopwatch _{"Deleting in ads::RbTree   "};
+            Stopwatch _{"Deleting in ads::RbTree  "};
             for (int i = 0; i < 30'000; ++i) {
-                // std::cout << "Idx = " << i << std::endl;
                 adsSet.Remove(i);
             }
         }
